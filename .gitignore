@@ -1,0 +1,7 @@
+# Cursor
+.cursor/
+
+# Node
+.env
+dist/
+node_modules/
