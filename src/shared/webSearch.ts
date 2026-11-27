@@ -1,3 +1,4 @@
+import { enqueueOpenRouter } from '#shared/openRouterQueue';
 import type { OpenResponsesResult } from '@openrouter/sdk/models';
 import { OpenRouter } from '@openrouter/sdk';
 
@@ -14,12 +15,14 @@ const SYSTEM_PROMPT = `
 export default async function webSearch(
   prompt: string,
 ): Promise<OpenResponsesResult> {
-  return await openRouter.responses.send({
-    responsesRequest: {
-      input: [{ content: prompt, role: 'user' }],
-      instructions: SYSTEM_PROMPT,
-      model: 'openai/gpt-6-luna',
-      tools: [{ type: 'openrouter:web_search' }],
-    },
-  });
+  return enqueueOpenRouter(() =>
+    openRouter.responses.send({
+      responsesRequest: {
+        input: [{ content: prompt, role: 'user' }],
+        instructions: SYSTEM_PROMPT,
+        model: 'openai/gpt-6-luna',
+        tools: [{ type: 'openrouter:web_search' }],
+      },
+    }),
+  );
 }
