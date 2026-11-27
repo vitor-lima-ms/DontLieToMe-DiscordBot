@@ -15,7 +15,8 @@
     "format": "prettier --config .prettierrc src",
     "format:check": "prettier --config .prettierrc --check src",
     "lint": "eslint --config eslint.config.ts src",
-    "lint:fix": "eslint --config eslint.config.ts --fix src"
+    "lint:fix": "eslint --config eslint.config.ts --fix src",
+    "test": "tsc && node --test dist/shared/audio/wakeWord.test.js"
   },
   "dependencies": {
     "@discordjs/opus": "^0.11.0",
