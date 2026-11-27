@@ -1,3 +1,4 @@
+import { buildFactCheckEmbed } from '#shared/discord/factCheckEmbed';
 import pcmToWav from '#shared/audio/pcmToWav';
 import pinoLogger from '#shared/pinoLogger';
 import prism from 'prism-media';
@@ -14,7 +15,6 @@ import {
   VoiceConnectionStatus,
 } from '@discordjs/voice';
 import { extractAfterWakeWord, getWakeWord } from '#shared/audio/wakeWord';
-import { buildFactCheckEmbed } from '#shared/discord/factCheckEmbed';
 
 const LOGGER = pinoLogger('joinVoiceChannel');
 

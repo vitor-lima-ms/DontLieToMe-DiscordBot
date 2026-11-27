@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
 import {
+  buildFactCheckEmbed,
   EMBED_DESCRIPTION_MAX,
   EMBED_TITLE_MAX,
   FACT_CHECK_EMBED_COLOR,
-  buildFactCheckEmbed,
   truncateForEmbed,
 } from './factCheckEmbed.js';
+import { describe, it } from 'node:test';
 
 describe('truncateForEmbed', () => {
   it('devolve o texto intacto quando cabe no limite', () => {
@@ -29,10 +29,7 @@ describe('buildFactCheckEmbed', () => {
 
     assert.equal(data.author?.name, 'Pergunta');
     assert.equal(data.title, 'quais os jogos do brasileirao');
-    assert.equal(
-      data.description,
-      'Neste fim de semana: Flamengo x Palmeiras',
-    );
+    assert.equal(data.description, 'Neste fim de semana: Flamengo x Palmeiras');
     assert.equal(data.color, FACT_CHECK_EMBED_COLOR);
     assert.ok(data.timestamp);
   });
