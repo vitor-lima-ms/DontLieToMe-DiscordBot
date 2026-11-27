@@ -13,6 +13,7 @@ import {
   joinVoiceChannel as jvc,
   VoiceConnectionStatus,
 } from '@discordjs/voice';
+import { extractAfterWakeWord, getWakeWord } from '#shared/audio/wakeWord';
 
 const LOGGER = pinoLogger('joinVoiceChannel');
 
@@ -98,33 +99,57 @@ const joinVoiceChannel = {
 
           const transcription = await wavToText(wav);
 
-          if (transcription.text) {
-            const webSearchResult = await webSearch(transcription.text);
+          if (!transcription.text) {
+            LOGGER.info({ userId }, 'transcription.text é falsy');
+            return;
+          }
 
-            const messageItem = webSearchResult.output.find(
-              (outputItem) => outputItem.type === 'message',
+          const wake = extractAfterWakeWord(transcription.text, getWakeWord());
+          if (!wake.triggered) {
+            LOGGER.info(
+              { text: transcription.text, userId },
+              'Sem gatilho, ignorado',
             );
-            if (!messageItem) {
-              LOGGER.error('Sem outputItem.type === "message"');
-              return;
-            }
+            return;
+          }
+          if (!wake.remainder) {
+            LOGGER.info(
+              { text: transcription.text, userId },
+              'Só gatilho, ignorado',
+            );
+            return;
+          }
 
-            const output = messageItem.content.find(
-              (contentItem) => contentItem.type === 'output_text',
+          const webSearchResult = await webSearch(wake.remainder);
+
+          const messageItem = webSearchResult.output.find(
+            (outputItem) => outputItem.type === 'message',
+          );
+          if (!messageItem) {
+            LOGGER.error('Sem outputItem.type === "message"');
+            return;
+          }
+
+          const output = messageItem.content.find(
+            (contentItem) => contentItem.type === 'output_text',
+          );
+          if (!output) {
+            LOGGER.error('Sem contentItem.type === "output_text"');
+            return;
+          }
+          if (output.text.trim().toUpperCase() === 'SKIP') {
+            LOGGER.info(
+              { remainder: wake.remainder, userId },
+              'Web Search skippada',
             );
-            if (!output) {
-              LOGGER.error('Sem contentItem.type === "output_text"');
-              return;
-            }
-            if (output.text.trim().toUpperCase() === 'SKIP') {
-              LOGGER.info('Web Search skippada');
-            } else {
-              await interaction.followUp(
-                `Pergunta: ${transcription.text}\nResposta: ${output.text}`,
-              );
-            }
           } else {
-            LOGGER.info('transcription.text é falsy');
+            LOGGER.info(
+              { remainder: wake.remainder, userId },
+              'Web Search respondeu',
+            );
+            await interaction.followUp(
+              `Pergunta: ${wake.remainder}\nResposta: ${output.text}`,
+            );
           }
         });
 
