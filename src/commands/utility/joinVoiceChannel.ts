@@ -83,72 +83,82 @@ const joinVoiceChannel = {
         pcmStream.on('end', async () => {
           activeUsers.delete(userId);
 
-          const pcm = Buffer.concat(chunks);
-          if (pcm.byteLength < MIN_PCM_BYTES) {
-            LOGGER.info(
-              { pcmBytes: pcm.byteLength, userId },
-              'Áudio muito curto, ignorado',
+          try {
+            const pcm = Buffer.concat(chunks);
+            if (pcm.byteLength < MIN_PCM_BYTES) {
+              LOGGER.info(
+                { pcmBytes: pcm.byteLength, userId },
+                'Áudio muito curto, ignorado',
+              );
+              return;
+            }
+
+            const wav = pcmToWav(pcm, {
+              channels: CHANNELS,
+              sampleRate: SAMPLE_RATE,
+            });
+
+            const transcription = await wavToText(wav);
+
+            if (!transcription.text) {
+              LOGGER.info({ userId }, 'transcription.text é falsy');
+              return;
+            }
+
+            const wake = extractAfterWakeWord(
+              transcription.text,
+              getWakeWord(),
             );
-            return;
-          }
+            if (!wake.triggered) {
+              LOGGER.info(
+                { text: transcription.text, userId },
+                'Sem gatilho, ignorado',
+              );
+              return;
+            }
+            if (!wake.remainder) {
+              LOGGER.info(
+                { text: transcription.text, userId },
+                'Só gatilho, ignorado',
+              );
+              return;
+            }
 
-          const wav = pcmToWav(pcm, {
-            channels: CHANNELS,
-            sampleRate: SAMPLE_RATE,
-          });
+            const webSearchResult = await webSearch(wake.remainder);
 
-          const transcription = await wavToText(wav);
-
-          if (!transcription.text) {
-            LOGGER.info({ userId }, 'transcription.text é falsy');
-            return;
-          }
-
-          const wake = extractAfterWakeWord(transcription.text, getWakeWord());
-          if (!wake.triggered) {
-            LOGGER.info(
-              { text: transcription.text, userId },
-              'Sem gatilho, ignorado',
+            const messageItem = webSearchResult.output.find(
+              (outputItem) => outputItem.type === 'message',
             );
-            return;
-          }
-          if (!wake.remainder) {
-            LOGGER.info(
-              { text: transcription.text, userId },
-              'Só gatilho, ignorado',
-            );
-            return;
-          }
+            if (!messageItem) {
+              LOGGER.error('Sem outputItem.type === "message"');
+              return;
+            }
 
-          const webSearchResult = await webSearch(wake.remainder);
-
-          const messageItem = webSearchResult.output.find(
-            (outputItem) => outputItem.type === 'message',
-          );
-          if (!messageItem) {
-            LOGGER.error('Sem outputItem.type === "message"');
-            return;
-          }
-
-          const output = messageItem.content.find(
-            (contentItem) => contentItem.type === 'output_text',
-          );
-          if (!output) {
-            LOGGER.error('Sem contentItem.type === "output_text"');
-            return;
-          }
-          if (output.text.trim().toUpperCase() === 'SKIP') {
-            LOGGER.info(
-              { remainder: wake.remainder, userId },
-              'Web Search skippada',
+            const output = messageItem.content.find(
+              (contentItem) => contentItem.type === 'output_text',
             );
-          } else {
-            LOGGER.info(
-              { remainder: wake.remainder, userId },
-              'Web Search respondeu',
-            );
-            await interaction.followUp(
-              `Pergunta: ${wake.remainder}\nResposta: ${output.text}`,
+            if (!output) {
+              LOGGER.error('Sem contentItem.type === "output_text"');
+              return;
+            }
+            if (output.text.trim().toUpperCase() === 'SKIP') {
+              LOGGER.info(
+                { remainder: wake.remainder, userId },
+                'Web Search skippada',
+              );
+            } else {
+              LOGGER.info(
+                { remainder: wake.remainder, userId },
+                'Web Search respondeu',
+              );
+              await interaction.followUp(
+                `Pergunta: ${wake.remainder}\nResposta: ${output.text}`,
+              );
+            }
+          } catch (error) {
+            LOGGER.error(
+              { error, userId },
+              'Falha ao processar enunciado (OpenRouter/fila); descartado',
             );
           }
         });
