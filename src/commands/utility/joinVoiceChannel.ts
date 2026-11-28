@@ -1,3 +1,4 @@
+import { buildFactCheckEmbed } from '#shared/discord/factCheckEmbed';
 import pcmToWav from '#shared/audio/pcmToWav';
 import pinoLogger from '#shared/pinoLogger';
 import prism from 'prism-media';
@@ -151,9 +152,17 @@ const joinVoiceChannel = {
                 { remainder: wake.remainder, userId },
                 'Web Search respondeu',
               );
-              await interaction.followUp(
-                `Pergunta: ${wake.remainder}\nResposta: ${output.text}`,
-              );
+              const channel = interaction.channel;
+              if (!channel?.isSendable()) {
+                LOGGER.error(
+                  { userId },
+                  'Canal não permite envio; resposta descartada',
+                );
+                return;
+              }
+              await channel.send({
+                embeds: [buildFactCheckEmbed(wake.remainder, output.text)],
+              });
             }
           } catch (error) {
             LOGGER.error(
