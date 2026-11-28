@@ -1,10 +1,7 @@
 const BITS_PER_SAMPLE = 16;
 const HEADER_SIZE = 44;
 
-export type PcmToWavOptions = {
-  channels: number;
-  sampleRate: number;
-};
+export type PcmToWavOptions = { channels: number; sampleRate: number };
 
 /** Empacota PCM s16le em um buffer WAV (RIFF) em memória. */
 export default function pcmToWav(
