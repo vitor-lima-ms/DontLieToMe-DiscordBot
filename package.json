@@ -16,7 +16,8 @@
     "format:check": "prettier --config .prettierrc --check src",
     "lint": "eslint --config eslint.config.ts src",
     "lint:fix": "eslint --config eslint.config.ts --fix src",
-    "test": "tsc && node --test 'dist/**/*.test.js'"
+    "test": "tsc && node --test 'dist/**/*.test.js'",
+    "start": "node dist/index.js"
   },
   "dependencies": {
     "@discordjs/opus": "^0.11.0",
