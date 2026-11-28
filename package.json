@@ -17,6 +17,7 @@
     "lint": "eslint --config eslint.config.ts src",
     "lint:fix": "eslint --config eslint.config.ts --fix src",
     "test": "tsc && node --test 'dist/**/*.test.js'",
+    "build": "tsc",
     "start": "node dist/index.js"
   },
   "dependencies": {
